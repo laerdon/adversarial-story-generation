@@ -31,7 +31,7 @@ class OllamaInterface(BaseModelInterface):
             response = requests.post(
                 self.base_url,
                 json={"model": self.model, "messages": messages, "stream": False},
-                timeout=30,
+                timeout=3600,
             )
 
             if response.status_code == 200:
@@ -55,109 +55,104 @@ class HuggingFaceInterface(BaseModelInterface):
 
         print(f"Loading model on {self.device}")
 
-        # Load tokenizer
+        # Load tokenizer and model
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_name,
             token=os.environ["HUGGINGFACE_TOKEN"],
         )
 
-        # Set pad token if not set
+        # Set pad token to eos token if not set
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
+            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
 
-        # Load model with basic configurations
+        # Configure model with optimized memory settings
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
             torch_dtype=torch.float16,
             device_map="auto",
             token=os.environ["HUGGINGFACE_TOKEN"],
             low_cpu_mem_usage=True,
-            max_memory={0: "16GB"},
+            max_memory={0: "20GB"},  # Using most of our available GPU memory
+        ).to(
+            self.device
+        )  # Ensure model is on the correct device
+
+    def _format_messages(self, messages: List[Dict[str, str]]) -> str:
+        """Format messages into a prompt string for Llama 3 Instruct."""
+        formatted_prompt = ""
+
+        # Find system message if it exists
+        system_msg = next(
+            (msg["content"] for msg in messages if msg["role"] == "system"), None
         )
 
-        # Clear CUDA cache
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+        # Start conversation
+        formatted_prompt = "<s>"
+
+        # Add system message if it exists
+        if system_msg:
+            formatted_prompt += f"[INST] <<SYS>>\n{system_msg}\n<</SYS>>\n\n"
+        else:
+            formatted_prompt += "[INST] "
+
+        # Add the conversation history
+        for i, msg in enumerate(messages):
+            if msg["role"] == "system":
+                continue
+
+            if msg["role"] == "user":
+                if i == len(messages) - 1:  # If this is the last message
+                    formatted_prompt += f"{msg['content']} [/INST]"
+                else:
+                    formatted_prompt += f"{msg['content']} [/INST]"
+            elif msg["role"] == "assistant":
+                formatted_prompt += f" {msg['content']}</s><s>[INST] "
+
+        return formatted_prompt
 
     def generate_response(
         self, messages: List[Dict[str, str]], max_length: int = 2048
     ) -> str:
-        """Generate a response to a series of messages using the simplest possible approach."""
-        try:
-            # Clear cache before starting
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
+        prompt = self._format_messages(messages)
 
-            # Convert messages to prompt string
-            prompt = self._format_simple_prompt(messages)
+        # Tokenize input
+        inputs = self.tokenizer(
+            prompt,
+            return_tensors="pt",
+            truncation=True,
+            max_length=max_length,
+            padding=True,
+        )
 
-            # Tokenize the prompt
-            inputs = self.tokenizer(
-                prompt,
-                return_tensors="pt",
-                padding=True,
-                truncation=True,
-                max_length=1024,
-            ).to(self.device)
+        # Create position IDs tensor
+        position_ids = torch.arange(len(inputs["input_ids"][0])).unsqueeze(0)
 
-            # Generate output
-            with torch.no_grad():
-                output = self.model.generate(
-                    **inputs,
-                    max_new_tokens=512,
-                    do_sample=True,
-                    temperature=0.7,
-                    top_p=0.9,
-                    repetition_penalty=1.1,
-                )
+        # Move all tensors to the correct device
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        position_ids = position_ids.to(self.device)
 
-            # Decode just the new tokens
-            generated_text = self.tokenizer.decode(
-                output[0][inputs.input_ids.shape[1] :], skip_special_tokens=True
+        with torch.no_grad():
+            outputs = self.model.generate(
+                input_ids=inputs["input_ids"],
+                attention_mask=inputs["attention_mask"],
+                position_ids=position_ids,  # Explicitly pass position IDs
+                max_new_tokens=1024,
+                do_sample=True,
+                temperature=0.7,
+                top_p=0.9,
+                repetition_penalty=1.2,
+                pad_token_id=self.tokenizer.pad_token_id,
+                eos_token_id=self.tokenizer.eos_token_id,
             )
 
-            # Clear cache after generation
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-
-            return generated_text.strip()
-
-        except Exception as e:
-            print(f"Error in generate_response: {str(e)}")
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-            raise RuntimeError(f"Generation failed: {str(e)}")
-
-    def _format_simple_prompt(self, messages: List[Dict[str, str]]) -> str:
-        """Format messages into a simple prompt string for Llama 3 Instruct.
-        Uses the official Meta format from documentation.
-        """
-        prompt = ""
-
-        # Extract system message if present
-        system_msg = None
-        for msg in messages:
-            if msg["role"] == "system":
-                system_msg = msg["content"]
-                break
-
-        # Start with user/assistant pairs
-        for i, msg in enumerate(messages):
-            if msg["role"] == "system":
-                continue  # Handle separately
-
-            if msg["role"] == "user":
-                # If we have a system message and this is the first user message, include it
-                if system_msg and not prompt:
-                    prompt += f"<s>[INST] <<SYS>>\n{system_msg}\n<</SYS>>\n\n{msg['content']} [/INST]"
-                else:
-                    prompt += f"<s>[INST] {msg['content']} [/INST]"
-
-            elif msg["role"] == "assistant" and i < len(messages) - 1:
-                # Only add assistant responses if they're not the last message
-                prompt += f" {msg['content']}</s>"
-
-        return prompt
+        # Only decode the new tokens
+        response = self.tokenizer.decode(
+            outputs[0][inputs["input_ids"].shape[1] :],
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=True,
+        )
+        return response.strip()
 
 
 # Global model instance (per process)
