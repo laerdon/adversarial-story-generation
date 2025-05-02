@@ -385,4 +385,4 @@ if __name__ == "__main__":
     # )
 
     # Run simulations for all combinations of treatments and stories
-    results = run_all_combinations(num_simulations=1, num_turns=1)
+    results = run_all_combinations(num_simulations=10, num_turns=3)
