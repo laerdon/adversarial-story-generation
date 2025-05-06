@@ -268,9 +268,18 @@ def analyze_all_simulations(results_file, output_file=None):
     # Analyze each simulation
     print("Analyzing simulations...")
     metrics = []
+    skipped_count = 0
     for sim in tqdm(results.get("simulations", [])):
+        # Skip simulations with a story_key of "ai regulation"
+        if sim.get("story_key", "") == "ai regulation":
+            skipped_count += 1
+            continue
+
         sim_metrics = analyze_simulation(sim, INITIAL_STORIES, FACTS_LIBRARY, model)
         metrics.append(sim_metrics)
+
+    if skipped_count > 0:
+        print(f"Skipped {skipped_count} simulations with story_key 'ai regulation'")
 
     # Save metrics to a file
     if output_file is None:
