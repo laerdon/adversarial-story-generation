@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import json
 import argparse
 import os
@@ -9,14 +8,10 @@ import seaborn as sns
 from collections import defaultdict
 
 
-def load_metrics(metrics_file):
+def load_metrics(metrics_file: str) -> list:
     """
     Load metrics from a JSON file.
-
-    Args:
         metrics_file (str): Path to the metrics JSON file
-
-    Returns:
         list: The loaded metrics
     """
     try:
@@ -28,14 +23,10 @@ def load_metrics(metrics_file):
         return []
 
 
-def extract_overall_metrics(metrics):
+def extract_overall_metrics(metrics: list) -> pd.DataFrame:
     """
     Extract overall metrics (not just fact-level) from the metrics data.
-
-    Args:
         metrics (list): List of metrics for all simulations
-
-    Returns:
         pd.DataFrame: DataFrame containing overall metrics
     """
     rows = []
@@ -62,14 +53,10 @@ def extract_overall_metrics(metrics):
     return pd.DataFrame(rows)
 
 
-def extract_fact_metrics(metrics):
+def extract_fact_metrics(metrics: list) -> pd.DataFrame:
     """
     Extract fact-level metrics from the metrics data.
-
-    Args:
         metrics (list): List of metrics for all simulations
-
-    Returns:
         pd.DataFrame: DataFrame containing fact-level metrics
     """
     rows = []
@@ -109,14 +96,10 @@ def extract_fact_metrics(metrics):
     return pd.DataFrame(rows)
 
 
-def summarize_bertscore_by_treatment(df):
+def summarize_bertscore_by_treatment(df: pd.DataFrame) -> pd.DataFrame:
     """
     Summarize BERTScore metrics by treatment.
-
-    Args:
         df (pd.DataFrame): DataFrame with overall metrics
-
-    Returns:
         pd.DataFrame: Summary of BERTScore by treatment
     """
     return (
@@ -133,14 +116,10 @@ def summarize_bertscore_by_treatment(df):
     )
 
 
-def summarize_bertscore_by_story(df):
+def summarize_bertscore_by_story(df: pd.DataFrame) -> pd.DataFrame:
     """
     Summarize BERTScore metrics by story (topic).
-
-    Args:
         df (pd.DataFrame): DataFrame with overall metrics
-
-    Returns:
         pd.DataFrame: Summary of BERTScore by story
     """
     return (
@@ -157,14 +136,10 @@ def summarize_bertscore_by_story(df):
     )
 
 
-def summarize_bertscore_by_treatment_story(df):
+def summarize_bertscore_by_treatment_story(df: pd.DataFrame) -> pd.DataFrame:
     """
     Summarize BERTScore metrics by treatment and story.
-
-    Args:
         df (pd.DataFrame): DataFrame with overall metrics
-
-    Returns:
         pd.DataFrame: Summary of BERTScore by treatment and story
     """
     return (
@@ -181,14 +156,10 @@ def summarize_bertscore_by_treatment_story(df):
     )
 
 
-def summarize_by_story_fact(df):
+def summarize_by_story_fact(df: pd.DataFrame) -> pd.DataFrame:
     """
     Summarize fact metrics by story and fact.
-
-    Args:
         df (pd.DataFrame): DataFrame with fact-level metrics
-
-    Returns:
         pd.DataFrame: Summary by story and fact
     """
     return (
@@ -198,14 +169,10 @@ def summarize_by_story_fact(df):
     )
 
 
-def summarize_by_treatment_fact(df):
+def summarize_by_treatment_fact(df: pd.DataFrame) -> pd.DataFrame:
     """
     Summarize fact metrics by treatment and fact.
-
-    Args:
         df (pd.DataFrame): DataFrame with fact-level metrics
-
-    Returns:
         pd.DataFrame: Summary by treatment and fact
     """
     return (
@@ -215,14 +182,10 @@ def summarize_by_treatment_fact(df):
     )
 
 
-def summarize_by_story_treatment_fact(df):
+def summarize_by_story_treatment_fact(df: pd.DataFrame) -> pd.DataFrame:
     """
     Summarize fact metrics by story, treatment, and fact.
-
-    Args:
         df (pd.DataFrame): DataFrame with fact-level metrics
-
-    Returns:
         pd.DataFrame: Summary by story, treatment, and fact
     """
     return (
@@ -232,11 +195,9 @@ def summarize_by_story_treatment_fact(df):
     )
 
 
-def plot_bertscore_heatmap(df, output_dir=None):
+def plot_bertscore_heatmap(df: pd.DataFrame, output_dir: str = None):
     """
     Plot a heatmap of BERTScore F1 by story and treatment.
-
-    Args:
         df (pd.DataFrame): DataFrame with overall metrics
         output_dir (str, optional): Directory to save the plot to
     """
@@ -299,11 +260,9 @@ def plot_bertscore_heatmap(df, output_dir=None):
         plt.show()
 
 
-def plot_bertscore_bars(df, output_dir=None):
+def plot_bertscore_bars(df: pd.DataFrame, output_dir: str = None):
     """
     Plot bar charts comparing BERTScore metrics across treatments.
-
-    Args:
         df (pd.DataFrame): DataFrame with overall metrics
         output_dir (str, optional): Directory to save the plot to
     """
@@ -387,11 +346,9 @@ def plot_bertscore_bars(df, output_dir=None):
         plt.show()
 
 
-def plot_fact_heatmap(df, output_dir=None):
+def plot_fact_heatmap(df: pd.DataFrame, output_dir: str = None):
     """
     Plot a heatmap of fact scores by story and treatment.
-
-    Args:
         df (pd.DataFrame): DataFrame with fact-level metrics
         output_dir (str, optional): Directory to save the plot to
     """
@@ -416,11 +373,9 @@ def plot_fact_heatmap(df, output_dir=None):
         plt.show()
 
 
-def plot_fact_bars(df, output_dir=None):
+def plot_fact_bars(df: pd.DataFrame, output_dir: str = None):
     """
     Plot bar charts of fact scores by treatment for each story.
-
-    Args:
         df (pd.DataFrame): DataFrame with fact-level metrics
         output_dir (str, optional): Directory to save the plots to
     """
@@ -456,11 +411,9 @@ def plot_fact_bars(df, output_dir=None):
             plt.show()
 
 
-def plot_bertscore_vs_fact_presence(df, output_dir=None):
+def plot_bertscore_vs_fact_presence(df: pd.DataFrame, output_dir: str = None):
     """
     Plot scatter plot of BERTScore vs fact presence.
-
-    Args:
         df (pd.DataFrame): DataFrame with overall metrics
         output_dir (str, optional): Directory to save the plot to
     """
@@ -502,11 +455,9 @@ def plot_bertscore_vs_fact_presence(df, output_dir=None):
         plt.show()
 
 
-def compile_metrics(metrics_file, output_dir=None):
+def compile_metrics(metrics_file: str, output_dir: str = None):
     """
     Compile and analyze metrics from the metrics file.
-
-    Args:
         metrics_file (str): Path to the metrics JSON file
         output_dir (str, optional): Directory to save the output to
     """
@@ -576,7 +527,7 @@ def compile_metrics(metrics_file, output_dir=None):
 
     # Generate a readable report
     report = []
-    report.append("=== Metrics Summary Report ===\n")
+    report.append(">>> Metrics summary report\n")
 
     # BERTScore summary
     report.append("BERTScore by Treatment:")
@@ -609,7 +560,7 @@ def compile_metrics(metrics_file, output_dir=None):
         report.append(f"  {story}: {avg_score:.4f}")
 
     # Get top 3 highest and lowest impact treatments on facts
-    report.append("\nTop 3 Treatments with Highest Fact Presence:")
+    report.append("\nTop 3 treatments with highest fact presence:")
     treatment_avg = (
         overall_df.groupby("treatment_key")["fact_presence_avg"]
         .mean()
@@ -622,7 +573,7 @@ def compile_metrics(metrics_file, output_dir=None):
     for i, (treatment, score) in enumerate(treatment_avg.tail(3).items()):
         report.append(f"  {i+1}. {treatment}: {score:.4f}")
 
-    # Add detailed fact breakdown by treatment
+    # Fact breakdown by treatment
     report.append("\nFact Breakdown by Treatment:")
     grouped = (
         fact_df.groupby(["treatment_key", "fact_key"])["fact_score"]
@@ -634,7 +585,7 @@ def compile_metrics(metrics_file, output_dir=None):
         for _, row in group.iterrows():
             report.append(f"    {row['fact_key']}: {row['fact_score']:.4f}")
 
-    # Add detailed fact breakdown by story
+    # Fact breakdown by story
     report.append("\nFact Breakdown by Story:")
     grouped = (
         fact_df.groupby(["story_key", "fact_key"])["fact_score"].mean().reset_index()

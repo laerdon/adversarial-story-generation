@@ -4,14 +4,12 @@ import json
 import re
 import os
 from contextlib import contextmanager
-from model_interface import get_model, is_cluster
+from model_interface import get_model
 
-# Configuration
 base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/api/chat")
 model = os.getenv("OLLAMA_MODEL", "llama3")
 
 
-# Add connection management
 @contextmanager
 def ollama_connection(max_retries=3, retry_delay=1):
     """Context manager for handling Ollama API connections with retries."""
@@ -149,7 +147,7 @@ Following is a list of facts you may or may not use. Paraphrase and mold them as
         self.history.append({"role": "system", "content": system_prompt})
 
         # Initialize the model interface
-        self.model = get_model(use_cluster=is_cluster())
+        self.model = get_model()
 
     def chat_turn(self, message=None):
         if message:

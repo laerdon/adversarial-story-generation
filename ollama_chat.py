@@ -31,8 +31,3 @@ def chat_with_ollama(user_input):
         print(f"Error: Status code {response.status_code}")
         print(f"Response: {response.text}")
         return "Sorry, there was an error connecting to the model."
-
-
-# Example usage
-if __name__ == "__main__":
-    print(chat_with_ollama("Hello! Who are you?"))

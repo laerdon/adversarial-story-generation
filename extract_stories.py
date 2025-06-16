@@ -76,6 +76,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         file_path = sys.argv[1]
     else:
-        file_path = "final-project/final_all_combinations_20250502_013930.json"
+        file_path = "final-project/final_all_combinations_default.json"
 
     process_json_file(file_path)

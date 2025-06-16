@@ -112,16 +112,12 @@ FACTS_LIBRARY = {
 FACTS = FACTS_LIBRARY["tariffs"]
 
 
-def get_directive_for_topic(treatment, topic_key="tariffs"):
+def get_directive_for_topic(treatment: dict, topic_key: str = "tariffs") -> dict:
     """
     Get the appropriate directives for a treatment based on the topic.
-
-    Args:
         treatment (dict): Treatment definition with author_stance and editor_stance
         topic_key (str): The topic to get directives for
-
-    Returns:
-        dict: Treatment with topic-specific directives added
+        Returns the treatment with topic-specific directives added
     """
     # Make sure the topic exists in our directives library
     if topic_key not in DIRECTIVES_LIBRARY:
@@ -164,8 +160,6 @@ def run_simulations(
 ):
     """
     Run multiple simulations across different treatments.
-
-    Args:
         treatments (list): List of treatment keys to run. If None, runs all treatments.
         num_simulations (int): Number of simulations to run per treatment.
         num_turns (int): Number of turns per simulation.
@@ -174,6 +168,7 @@ def run_simulations(
         facts_key (str): Key for selecting facts from FACTS_LIBRARY.
         custom_story (str): Custom story text to use instead of predefined stories.
         custom_facts (str): Custom facts text to use instead of predefined facts.
+        Returns the results of the simulations.
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     results = {
@@ -201,7 +196,7 @@ def run_simulations(
 
     treatments_to_run = treatments if treatments else TREATMENTS.keys()
 
-    print(f"\n=== Starting Story Generation ===")
+    print(f"\n>>> Starting story generation")
     print(f"Story: {story_key if not custom_story else 'custom'}")
     print(f"Facts: {facts_key if not custom_facts else 'custom'}")
 
@@ -210,7 +205,7 @@ def run_simulations(
         # Get topic-specific directives
         treatment = get_directive_for_topic(base_treatment, story_key)
 
-        print(f"\n=== Running {treatment['name']} ===")
+        print(f"\n>>> Running {treatment['name']}")
         print(f"Author directive: {treatment['author_directive'] or 'None'}")
         print(f"Editor directive: {treatment['editor_directive'] or 'None'}")
         print(f"Author stance: {treatment['author_stance']}")
@@ -253,7 +248,7 @@ def run_simulations(
             print(f"Simulation {sim_num + 1} complete. Results saved.")
             time.sleep(0.5)  # Brief pause between simulations
 
-    print("\n=== All simulations complete ===")
+    print("\n>>> All simulations complete")
     print(f"Results saved to simulation_results_{timestamp}.json")
     return results
 
@@ -261,14 +256,10 @@ def run_simulations(
 def run_all_combinations(num_simulations=1, num_turns=3, delay=0.1):
     """
     Run simulations for all combinations of treatments and stories.
-
-    Args:
         num_simulations (int): Number of simulations per treatment-story combination
         num_turns (int): Number of turns per simulation
         delay (float): Delay between turns in seconds
-
-    Returns:
-        dict: Results containing all simulations
+        Returns the results containing all simulations
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     all_results = {
@@ -286,7 +277,7 @@ def run_all_combinations(num_simulations=1, num_turns=3, delay=0.1):
     combination_count = 1
     total_combinations = len(TREATMENTS) * len(INITIAL_STORIES)
 
-    print(f"\n=== Starting All Combinations Simulation ===")
+    print(f"\n>>> Starting all combinations simulation")
     print(
         f"Running {num_simulations} simulation(s) for each of {total_combinations} combinations"
     )
@@ -303,7 +294,7 @@ def run_all_combinations(num_simulations=1, num_turns=3, delay=0.1):
             # Get topic-specific directives
             treatment = get_directive_for_topic(base_treatment, story_key)
 
-            print(f"\n=== Combination {combination_count}/{total_combinations} ===")
+            print(f"\n>>> Combination {combination_count}/{total_combinations}")
             print(f"Story: {story_key}")
             print(f"Treatment: {treatment['name']}")
             print(f"Author directive: {treatment['author_directive'] or 'None'}")
@@ -352,37 +343,15 @@ def run_all_combinations(num_simulations=1, num_turns=3, delay=0.1):
                     json.dump(all_results, f, indent=2)
 
                 print(f"Simulation {sim_num + 1} complete. Results saved.")
-                time.sleep(0.5)  # Brief pause between simulations
+                time.sleep(0.5)
 
             combination_count += 1
 
-    print(f"\n=== All combinations complete ({total_combinations} combinations) ===")
+    print(f"\n>>> All combinations complete ({total_combinations} combinations)")
     print(f"Results saved to all_combinations_{timestamp}.json")
     return all_results
 
 
 if __name__ == "__main__":
-    # Example usage:
-
-    # Run all treatments with default tariffs story
-    # results = run_simulations(num_simulations=2)
-
-    # Run with climate change story
-    # results = run_simulations(
-    #     treatments=["pro_vs_anti", "control"],
-    #     num_simulations=2,
-    #     num_turns=3,
-    #     story_key="climate",
-    #     facts_key="climate"
-    # )
-
-    # Example with custom story and facts
-    # results = run_simulations(
-    #     treatments=["pro_vs_anti"],
-    #     num_simulations=1,
-    #     custom_story="Your custom story text here...",
-    #     custom_facts="* Custom fact 1\n* Custom fact 2"
-    # )
-
-    # Run simulations for all combinations of treatments and stories
+    # Default configuration here:
     results = run_all_combinations(num_simulations=10, num_turns=3)
